@@ -1,0 +1,53 @@
+<%@ page pageEncoding="UTF-8" %>
+<%-- Métodos de apoyo para las vistas del Administrador (se incluye con <%@ include %>).
+     Mismos nombres y colores que en los demás roles. --%>
+<%!
+    String[] nombresRol = {"Administrador", "Capacity Planner", "Network Operator", "Maintenance Coordinator", "Supervisor"};
+
+    String nombreRol(int idRol) {
+        return idRol >= 1 && idRol <= nombresRol.length ? nombresRol[idRol - 1] : String.valueOf(idRol);
+    }
+
+    // Color del badge según el estado del segmento o la estación
+    String claseEstado(String estado) {
+        if ("Operativo".equals(estado) || "Operativa".equals(estado) || "Activo".equals(estado)) return "green";
+        if ("Degradado".equals(estado)) return "yellow";
+        if ("Fuera de servicio".equals(estado)) return "red";
+        if ("Inactiva".equals(estado) || "Inactivo".equals(estado)) return "grey";
+        return "blue"; // En mantenimiento
+    }
+
+    // Nivel de utilización: <80% normal, 80%-95% alta, >95% crítica
+    String claseUso(double porcentaje) {
+        if (porcentaje > 95) return "critica";
+        if (porcentaje >= 80) return "alta";
+        return "normal";
+    }
+
+    // 2400.0 -> "2.400"
+    String numero(double valor) {
+        return String.format(new java.util.Locale("es", "ES"), "%,.0f", valor);
+    }
+
+    // 97.5 -> "97,5"
+    String decimal(double valor) {
+        return String.format(new java.util.Locale("es", "ES"), "%.1f", valor);
+    }
+
+    // Evita romper el HTML con comillas o < > en textos ingresados
+    String texto(String valor) {
+        if (valor == null) return "";
+        return valor.replace("&", "&amp;").replace("<", "&lt;")
+                .replace(">", "&gt;").replace("\"", "&quot;");
+    }
+
+    // Para armar enlaces con parámetros (espacios, tildes)
+    String url(String valor) {
+        try {
+            return java.net.URLEncoder.encode(valor == null ? "" : valor, "UTF-8");
+        } catch (java.io.UnsupportedEncodingException e) {
+            return "";
+        }
+    }
+
+%>

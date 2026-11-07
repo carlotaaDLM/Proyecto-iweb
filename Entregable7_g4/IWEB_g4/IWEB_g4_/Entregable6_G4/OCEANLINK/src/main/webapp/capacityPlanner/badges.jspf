@@ -1,0 +1,105 @@
+<%@ page pageEncoding="UTF-8" %>
+<%-- Métodos de apoyo para las vistas del Capacity Planner (se incluye con <%@ include %>) --%>
+<%!
+    // Color del badge según el estado de la solicitud
+    String claseEstadoSolicitud(String estado) {
+        if ("Registrada".equals(estado)) return "grey";
+        if ("En evaluación".equals(estado)) return "blue";
+        if ("Pendiente por capacidad".equals(estado)) return "yellow";
+        if ("Rechazada".equals(estado)) return "red";
+        return "green"; // Aprobada, Provisionada, Activa
+    }
+
+    // Color del badge según el estado del segmento
+    String claseEstadoSegmento(String estado) {
+        if ("Operativo".equals(estado)) return "green";
+        if ("Degradado".equals(estado)) return "yellow";
+        if ("Fuera de servicio".equals(estado)) return "red";
+        return "blue";
+    }
+
+    // Nivel de utilización: <80% normal, 80%-95% alta, >95% crítica
+    String claseUso(double porcentaje) {
+        if (porcentaje > 95) return "critica";
+        if (porcentaje >= 80) return "alta";
+        return "normal";
+    }
+
+    // Color del badge del nivel (Normal / Alta / Crítica)
+    String claseNivel(String nivel) {
+        if ("Crítica".equals(nivel)) return "red";
+        if ("Alta".equals(nivel)) return "yellow";
+        return "green";
+    }
+
+    String textoNivel(String nivel) {
+        if ("Crítica".equals(nivel)) return "Utilización crítica";
+        if ("Alta".equals(nivel)) return "Alta utilización";
+        return "Normal";
+    }
+
+    // Barra de uso
+    String barraUso(double porcentaje) {
+        double ancho = Math.max(0, Math.min(100, porcentaje));
+        return "<div class=\"usage " + claseUso(porcentaje) + "\"><div class=\"usage-bar\"><span style=\"width: "
+                + String.format(java.util.Locale.US, "%.1f", ancho) + "%\"></span></div><span class=\"usage-value\">"
+                + decimal(porcentaje) + "%</span></div>";
+    }
+
+    // 2400.0 -> "2.400"
+    String numero(double valor) {
+        return String.format(new java.util.Locale("es", "ES"), "%,.0f", valor);
+    }
+
+    // 97.5 -> "97,5"
+    String decimal(double valor) {
+        return String.format(new java.util.Locale("es", "ES"), "%.1f", valor);
+    }
+
+    // "2026-09-22" (o "2026-09-22 10:00:00") -> "22/09/2026"
+    String fecha(String valor) {
+        if (valor == null || valor.length() < 10) return "—";
+        return valor.substring(8, 10) + "/" + valor.substring(5, 7) + "/" + valor.substring(0, 4);
+    }
+
+    // "2026-09-22 10:00:00" -> "22/09/2026 10:00"
+    String fechaHora(String valor) {
+        if (valor == null || valor.length() < 16) return fecha(valor);
+        return fecha(valor) + " " + valor.substring(11, 16);
+    }
+
+    // "2026-09-01" -> "Set 2026"
+    String mes(String valor) {
+        String[] meses = {"Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Set", "Oct", "Nov", "Dic"};
+        if (valor == null || valor.length() < 7) return "—";
+        return meses[Integer.parseInt(valor.substring(5, 7)) - 1] + " " + valor.substring(0, 4);
+    }
+
+    // Flecha de tendencia: ↑ 6,8% / ↓ 13,8% / → 0%
+    String tendencia(Double variacion) {
+        if (variacion == null) return "<span class=\"trend-flat\">—</span>";
+        if (variacion > 0.05) return "<span class=\"trend-up\">↑ " + decimal(variacion) + "%</span>";
+        if (variacion < -0.05) return "<span class=\"trend-down\">↓ " + decimal(-variacion) + "%</span>";
+        return "<span class=\"trend-flat\">→ 0%</span>";
+    }
+
+    // Evita romper el HTML con comillas o < > en textos ingresados
+    String texto(String valor) {
+        if (valor == null) return "";
+        return valor.replace("&", "&amp;").replace("<", "&lt;")
+                .replace(">", "&gt;").replace("\"", "&quot;");
+    }
+
+    // Para armar enlaces con parámetros (espacios, tildes)
+    String url(String valor) {
+        try {
+            return java.net.URLEncoder.encode(valor == null ? "" : valor, "UTF-8");
+        } catch (java.io.UnsupportedEncodingException e) {
+            return "";
+        }
+    }
+
+    String sel(boolean marcado) {
+        return marcado ? " selected" : "";
+    }
+%>

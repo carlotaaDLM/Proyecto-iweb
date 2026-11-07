@@ -1,0 +1,75 @@
+<%@ page pageEncoding="UTF-8" %>
+<%-- Métodos de apoyo para las vistas del Maintenance Coordinator (se incluye con <%@ include %>).
+     Mismos nombres y colores que en el Network Operator. --%>
+<%!
+    // Color del badge según el estado del mantenimiento
+    String claseEstadoMnt(String estado) {
+        if ("Programado".equals(estado)) return "blue";
+        if ("En ejecución".equals(estado)) return "yellow";
+        if ("Finalizado".equals(estado)) return "green";
+        return "grey"; // Cancelado
+    }
+
+    // Color del badge según el estado del segmento, estación o servicio
+    String claseEstadoSegmento(String estado) {
+        if ("Operativo".equals(estado) || "Operativa".equals(estado) || "Activo".equals(estado)) return "green";
+        if ("Degradado".equals(estado)) return "yellow";
+        if ("Fuera de servicio".equals(estado) || "Inactiva".equals(estado)) return "red";
+        return "blue";
+    }
+
+    // Color del badge según el resultado del cierre
+    String claseResultado(String resultado) {
+        if ("Exitoso".equals(resultado)) return "green";
+        if ("Parcial".equals(resultado)) return "yellow";
+        return "red";
+    }
+
+    // 2400.0 -> "2.400"
+    String numero(double valor) {
+        return String.format(new java.util.Locale("es", "ES"), "%,.0f", valor);
+    }
+
+    // Evita romper el HTML con comillas o < > en textos ingresados
+    String texto(String valor) {
+        if (valor == null) return "";
+        return valor.replace("&", "&amp;").replace("<", "&lt;")
+                .replace(">", "&gt;").replace("\"", "&quot;");
+    }
+
+    // Para armar enlaces con parámetros (espacios, tildes)
+    String url(String valor) {
+        try {
+            return java.net.URLEncoder.encode(valor == null ? "" : valor, "UTF-8");
+        } catch (java.io.UnsupportedEncodingException e) {
+            return "";
+        }
+    }
+
+    // "2026-10-03" -> "03/10/2026" (si trae hora, se conserva)
+    String fecha(String valor) {
+        if (valor == null || valor.length() < 10) return valor == null ? "—" : valor;
+        return valor.substring(8, 10) + "/" + valor.substring(5, 7) + "/" + valor.substring(0, 4)
+                + valor.substring(10);
+    }
+
+    // "96:00:00" -> "96 h"; "02:30:00" -> "2 h 30 min"
+    String duracion(String valor) {
+        if (valor == null || !valor.contains(":")) return "—";
+        String[] p = valor.split(":");
+        int h = Integer.parseInt(p[0]);
+        int m = Integer.parseInt(p[1]);
+        if (h == 0 && m == 0) return "—";
+        if (m == 0) return h + " h";
+        if (h == 0) return m + " min";
+        return h + " h " + m + " min";
+    }
+
+    boolean contiene(String[] arreglo, String valor) {
+        if (arreglo == null) return false;
+        for (String a : arreglo) {
+            if (a.equals(valor)) return true;
+        }
+        return false;
+    }
+%>

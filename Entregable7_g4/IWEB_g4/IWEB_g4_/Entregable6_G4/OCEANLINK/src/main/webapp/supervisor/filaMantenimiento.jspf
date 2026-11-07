@@ -1,0 +1,21 @@
+<%@ page pageEncoding="UTF-8" %>
+<%-- Fila de la tabla de mantenimientos (se repite en Dashboard, Mantenimientos, Detalle del segmento y Reportes).
+     Usa la variable "m" (beans.Mantenimiento) del for de la página que la incluye. --%>
+                        <tr>
+                            <td class="cell-main"><%= m.getCodigoMantenimiento() %></td>
+                            <td>
+                                <%= texto(m.getActividad() == null ? "—" : m.getActividad()) %>
+                                <span class="cell-sub"><%= m.getTipo() %></span>
+                            </td>
+                            <td class="tramo">
+                                <% if (m.getCodigoSegmento() != null) { %>
+                                <a href="<%= request.getContextPath() %>/SupervisorServlet?action=detalleSegmento&codigo=<%= url(m.getCodigoSegmento()) %>" class="cell-link"><%= m.getCodigoSegmento() %></a>
+                                <span class="cell-sub"><%= m.getTramo() %></span>
+                                <% } else { %>
+                                —
+                                <% } %>
+                            </td>
+                            <td class="date"><%= fechaHora(m.getFechaProgramada(), m.getHoraInicio()) %></td>
+                            <td class="num"><%= horas(m.getDuracionEstimada()) %></td>
+                            <td><span class="badge <%= claseEstadoMantenimiento(m.getEstado()) %>"><%= m.getEstado() %></span></td>
+                        </tr>

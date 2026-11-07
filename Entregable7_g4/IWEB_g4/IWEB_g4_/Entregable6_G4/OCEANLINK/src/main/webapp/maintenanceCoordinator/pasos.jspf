@@ -1,0 +1,13 @@
+<%@ page pageEncoding="UTF-8" %>
+<%-- Pasos del registro (igual que el wizard del Network Operator).
+     Antes de incluirlo se define: int pasoActual = 1..5 (5 = registrado) --%>
+<%
+    String[] nombresPasos = {"Datos generales", "Infraestructura", "Impacto de servicios", "Programación"};
+%>
+<ol class="wizard">
+    <% for (int p = 1; p <= nombresPasos.length; p++) { %>
+    <li class="<%= p < pasoActual ? "done" : (p == pasoActual ? "current" : "") %>">
+        <span><%= p < pasoActual ? "✓" : String.valueOf(p) %></span><%= nombresPasos[p - 1] %>
+    </li>
+    <% } %>
+</ol>

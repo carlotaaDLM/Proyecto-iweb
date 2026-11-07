@@ -1,0 +1,213 @@
+<%@ page pageEncoding="UTF-8" %>
+<%-- Métodos de apoyo para las vistas del Supervisor (se incluye con <%@ include %>).
+     Son los mismos del Capacity Planner, más los colores de incidencias, mantenimientos y gráficos. --%>
+<%!
+    // Color del badge según el estado de la solicitud
+    String claseEstadoSolicitud(String estado) {
+        if ("Registrada".equals(estado)) return "grey";
+        if ("En evaluación".equals(estado)) return "blue";
+        if ("Pendiente por capacidad".equals(estado)) return "yellow";
+        if ("Rechazada".equals(estado)) return "red";
+        return "green"; // Aprobada, Provisionada, Activa
+    }
+
+    // Color del badge según el estado del segmento
+    String claseEstadoSegmento(String estado) {
+        if ("Operativo".equals(estado)) return "green";
+        if ("Degradado".equals(estado)) return "yellow";
+        if ("Fuera de servicio".equals(estado)) return "red";
+        return "blue";
+    }
+
+    // Nivel de utilización: <80% normal, 80%-95% alta, >95% crítica
+    String claseUso(double porcentaje) {
+        if (porcentaje > 95) return "critica";
+        if (porcentaje >= 80) return "alta";
+        return "normal";
+    }
+
+    // Color del badge del nivel (Normal / Alta / Crítica)
+    String claseNivel(String nivel) {
+        if ("Crítica".equals(nivel)) return "red";
+        if ("Alta".equals(nivel)) return "orange";
+        return "green";
+    }
+
+    String textoNivel(String nivel) {
+        if ("Crítica".equals(nivel)) return "Utilización crítica";
+        if ("Alta".equals(nivel)) return "Alta utilización";
+        return "Normal";
+    }
+
+    // Barra de uso
+    String barraUso(double porcentaje) {
+        double ancho = Math.max(0, Math.min(100, porcentaje));
+        return "<div class=\"usage " + claseUso(porcentaje) + "\"><div class=\"usage-bar\"><span style=\"width: "
+                + String.format(java.util.Locale.US, "%.1f", ancho) + "%\"></span></div><span class=\"usage-value\">"
+                + decimal(porcentaje) + "%</span></div>";
+    }
+
+    // 2400.0 -> "2.400"
+    String numero(double valor) {
+        return String.format(new java.util.Locale("es", "ES"), "%,.0f", valor);
+    }
+
+    // 97.5 -> "97,5"
+    String decimal(double valor) {
+        return String.format(new java.util.Locale("es", "ES"), "%.1f", valor);
+    }
+
+    // "2026-09-22" (o "2026-09-22 10:00:00") -> "22/09/2026"
+    String fecha(String valor) {
+        if (valor == null || valor.length() < 10) return "—";
+        return valor.substring(8, 10) + "/" + valor.substring(5, 7) + "/" + valor.substring(0, 4);
+    }
+
+    // "2026-09-22 10:00:00" -> "22/09/2026 10:00"
+    String fechaHora(String valor) {
+        if (valor == null || valor.length() < 16) return fecha(valor);
+        return fecha(valor) + " " + valor.substring(11, 16);
+    }
+
+    // "2026-09-01" -> "Set 2026"
+    String mes(String valor) {
+        String[] meses = {"Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Set", "Oct", "Nov", "Dic"};
+        if (valor == null || valor.length() < 7) return "—";
+        return meses[Integer.parseInt(valor.substring(5, 7)) - 1] + " " + valor.substring(0, 4);
+    }
+
+    // Flecha de tendencia: ↑ 6,8% / ↓ 13,8% / → 0%
+    String tendencia(Double variacion) {
+        if (variacion == null) return "<span class=\"trend-flat\">—</span>";
+        if (variacion > 0.05) return "<span class=\"trend-up\">↑ " + decimal(variacion) + "%</span>";
+        if (variacion < -0.05) return "<span class=\"trend-down\">↓ " + decimal(-variacion) + "%</span>";
+        return "<span class=\"trend-flat\">→ 0%</span>";
+    }
+
+    // Evita romper el HTML con comillas o < > en textos ingresados
+    String texto(String valor) {
+        if (valor == null) return "";
+        return valor.replace("&", "&amp;").replace("<", "&lt;")
+                .replace(">", "&gt;").replace("\"", "&quot;");
+    }
+
+    // Para armar enlaces con parámetros (espacios, tildes)
+    String url(String valor) {
+        try {
+            return java.net.URLEncoder.encode(valor == null ? "" : valor, "UTF-8");
+        } catch (java.io.UnsupportedEncodingException e) {
+            return "";
+        }
+    }
+
+    String sel(boolean marcado) {
+        return marcado ? " selected" : "";
+    }
+
+    // Color del badge según la severidad de la incidencia
+    String claseSeveridad(String severidad) {
+        if ("Crítica".equals(severidad)) return "red";
+        if ("Alta".equals(severidad)) return "orange";
+        if ("Media".equals(severidad)) return "yellow";
+        return "blue";
+    }
+
+    // Color (hexadecimal) de la severidad para los gráficos
+    String colorSeveridad(String severidad) {
+        if ("Crítica".equals(severidad)) return "#d92d20";
+        if ("Alta".equals(severidad)) return "#f07a12";
+        if ("Media".equals(severidad)) return "#e0a800";
+        return "#2e6be6";
+    }
+
+    // Color del badge según el estado de la incidencia
+    String claseEstadoIncidencia(String estado) {
+        if ("Detectada".equals(estado)) return "red";
+        if ("En reparación".equals(estado)) return "yellow";
+        if ("Servicio restaurado".equals(estado)) return "green";
+        if ("Cerrada".equals(estado)) return "grey";
+        return "blue"; // En análisis, Reparación programada
+    }
+
+    String colorEstadoIncidencia(String estado) {
+        if ("Detectada".equals(estado)) return "#d92d20";
+        if ("En análisis".equals(estado)) return "#2e6be6";
+        if ("Reparación programada".equals(estado)) return "#7aa2f7";
+        if ("En reparación".equals(estado)) return "#e0a800";
+        if ("Servicio restaurado".equals(estado)) return "#16a34a";
+        return "#98a2b3";
+    }
+
+    // Color del badge según el estado del mantenimiento
+    String claseEstadoMantenimiento(String estado) {
+        if ("En ejecución".equals(estado)) return "yellow";
+        if ("Finalizado".equals(estado)) return "green";
+        if ("Cancelado".equals(estado)) return "grey";
+        return "blue"; // Programado
+    }
+
+    String colorEstadoMantenimiento(String estado) {
+        if ("En ejecución".equals(estado)) return "#e0a800";
+        if ("Finalizado".equals(estado)) return "#16a34a";
+        if ("Cancelado".equals(estado)) return "#98a2b3";
+        return "#2e6be6";
+    }
+
+    String colorEstadoSegmento(String estado) {
+        if ("Operativo".equals(estado)) return "#16a34a";
+        if ("Degradado".equals(estado)) return "#e0a800";
+        if ("Fuera de servicio".equals(estado)) return "#d92d20";
+        return "#2e6be6";
+    }
+
+    // Servicio afectado: Interrumpido (rojo) o Degradado (amarillo)
+    String claseSituacion(String situacion) {
+        return "Interrumpido".equals(situacion) ? "red" : "yellow";
+    }
+
+    // 7 -> "SRV-007", "CLI-007"
+    String codigo(String prefijo, int id) {
+        return String.format("%s-%03d", prefijo, id);
+    }
+
+    // "72:00:00" -> "72 h"
+    String horas(String duracion) {
+        if (duracion == null || !duracion.contains(":")) return "—";
+        return Integer.parseInt(duracion.substring(0, duracion.indexOf(":"))) + " h";
+    }
+
+    // Fecha y hora de un mantenimiento o evento: "2026-10-03" + "06:00:00" -> "03/10/2026 06:00"
+    String fechaHora(String fecha, String hora) {
+        if (hora == null || hora.length() < 5) return fecha(fecha);
+        return fecha(fecha) + " " + hora.substring(0, 5);
+    }
+
+    // Cantidad guardada en un mapa de conteos (0 si no está)
+    int cantidad(java.util.Map<String, Integer> mapa, String clave) {
+        if (mapa == null || mapa.get(clave) == null) return 0;
+        return mapa.get(clave);
+    }
+
+    // Fondo "conic-gradient" de un gráfico circular a partir de cantidades y colores
+    String dona(int[] cantidades, String[] colores) {
+        int total = 0;
+        for (int c : cantidades) total += c;
+        if (total == 0) return "background: #e4e7ec";
+        String fondo = "background: conic-gradient(";
+        double inicio = 0;
+        for (int i = 0; i < cantidades.length; i++) {
+            double fin = inicio + cantidades[i] * 100.0 / total;
+            if (i > 0) fondo += ", ";
+            fondo += colores[i] + " " + String.format(java.util.Locale.US, "%.1f", inicio) + "% "
+                    + String.format(java.util.Locale.US, "%.1f", fin) + "%";
+            inicio = fin;
+        }
+        return fondo + ")";
+    }
+
+    // Ancho (en %) de una barra respecto al valor más alto
+    String ancho(double valor, double maximo) {
+        if (maximo <= 0) return "0%";
+        return String.format(java.util.Locale.US, "%.0f", valor * 100 / maximo) + "%";
+    }
+%>
